@@ -1,0 +1,12 @@
+{
+  "name": "Remix: Oneiric: Multi-modal Dream Journal",
+  "description": "A surrealist dream journal with voice-to-transcription, AI image generation, and Jungian archetype analysis.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "AI Transcription",
+    "Image Generation",
+    "Symbolic Analysis"
+  ]
+}

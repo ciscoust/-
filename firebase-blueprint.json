@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Dream": {
+      "title": "Dream",
+      "description": "A dream entry with transcription, image, and analysis.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the dreamer." },
+        "transcription": { "type": "string", "description": "The transcribed voice recording." },
+        "emotionalTheme": { "type": "string", "description": "The core emotional theme identified by AI." },
+        "imageUrl": { "type": "string", "description": "URL of the generated surrealist image." },
+        "interpretation": {
+          "type": "object",
+          "properties": {
+            "summary": { "type": "string" },
+            "archetypes": { "type": "array", "items": { "type": "string" } },
+            "symbols": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "meaning": { "type": "string" } } } }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "transcription", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A follow-up message about the dream.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "dreams/{dreamId}": {
+      "schema": "Dream",
+      "description": "Collection of dreams."
+    },
+    "dreams/{dreamId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Chat log for a specific dream analysis."
+    }
+  }
+}

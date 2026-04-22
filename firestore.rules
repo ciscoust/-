@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Phase 4: Entity Validation
+    function isValidDream(data) {
+      return data.userId == request.auth.uid
+        && data.transcription is string && data.transcription.size() <= 5000
+        && (data.emotionalTheme == null || (data.emotionalTheme is string && data.emotionalTheme.size() <= 200))
+        && (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 1000))
+        && data.createdAt == request.time;
+    }
+
+    function isValidChatMessage(data) {
+      return data.role in ['user', 'model']
+        && data.content is string && data.content.size() <= 2000
+        && data.createdAt == request.time;
+    }
+
+    // Match Blocks
+    match /dreams/{dreamId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidId(dreamId)
+        && isValidDream(incoming())
+        && incoming().keys().hasAll(['userId', 'transcription', 'createdAt'])
+        && incoming().keys().size() <= 6;
+
+      allow update: if isOwner(existing().userId)
+        && isValidDream(incoming())
+        && (
+          // Action: Update interpretation or image
+          incoming().diff(existing()).affectedKeys().hasOnly(['emotionalTheme', 'imageUrl', 'interpretation'])
+        );
+
+      allow delete: if isOwner(existing().userId);
+
+      match /messages/{messageId} {
+        allow list: if isOwner(get(/databases/$(database)/documents/dreams/$(dreamId)).data.userId);
+        allow create: if isOwner(get(/databases/$(database)/documents/dreams/$(dreamId)).data.userId)
+          && isValidId(messageId)
+          && isValidChatMessage(incoming());
+      }
+    }
+  }
+}
